@@ -1,4 +1,7 @@
-
+"""
+Demo Data Seeding Script for Tat-Sahayk Hackathon
+Creates realistic demo data for impressive demo presentation
+"""
 import sys
 import os
 from datetime import datetime, timedelta
