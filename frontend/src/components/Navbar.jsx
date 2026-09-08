@@ -1,0 +1,329 @@
+import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import { useTheme } from "../context/ThemeContext.jsx";
+import { Sun, Moon, Menu, ChevronDown, Phone, User, LogOut, MapPin, Globe, Home } from "lucide-react";
+import toast from "react-hot-toast";
+import useAuthUser from "../hooks/useAuthUser.js";
+import { Link, useLocation, useSearchParams } from "react-router";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { logout } from "../lib/api.js";
+import { axiosInstance } from "../lib/axios.js";
+
+const LANGUAGES = [
+  { code: "en", label: "English",    native: "EN" },
+  { code: "hi", label: "Hindi",      native: "हिं" },
+  { code: "mr", label: "Marathi",    native: "मर" },
+  { code: "bn", label: "Bengali",    native: "বাং" },
+  { code: "te", label: "Telugu",     native: "తె" },
+  { code: "ta", label: "Tamil",      native: "தமி" },
+  { code: "gu", label: "Gujarati",   native: "ગુ" },
+  { code: "kn", label: "Kannada",    native: "ಕನ್" },
+];
+
+const Navbar = () => {
+  const { t, i18n } = useTranslation();
+  const { dark, toggle } = useTheme();
+  const { authUser } = useAuthUser();
+  const queryClient = useQueryClient();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [langOpen, setLangOpen] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const langRef = useRef(null);
+  const sosRef  = useRef(null);
+  const userMenuRef = useRef(null);
+  
+  const isAdmin = authUser?.role === "admin";
+  const showLocationToggle = location.pathname === "/" && authUser?.district;
+  
+  // Get location filter from URL or default to nationwide
+  const locationFilter = searchParams.get('location') || 'nationwide';
+  
+  const setLocationFilter = (value) => {
+    const newParams = new URLSearchParams(searchParams);
+    newParams.set('location', value);
+    setSearchParams(newParams);
+  };
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handler = (e) => {
+      if (langRef.current && !langRef.current.contains(e.target)) setLangOpen(false);
+      if (sosRef.current  && !sosRef.current.contains(e.target))  setSosOpen(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target)) setUserMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const { mutate: logoutMutation, isPending: loggingOut } = useMutation({
+    mutationFn: () => {
+      logout();
+      return Promise.resolve();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = "/";
+    },
+    onError: () => toast.error("Failed to sign out"),
+  });
+
+  const currentLang = LANGUAGES.find((l) => l.code === i18n.language) || LANGUAGES[0];
+
+  const helplines = [
+    { name: "Police",          number: "100" },
+    { name: "Medical",         number: "102" },
+    { name: "Disaster",        number: "1077" },
+    { name: "Disaster Mgmt.",  number: "108" },
+    { name: "Coast Guard",     number: "1554" },
+  ];
+
+  const handleSOS = async () => {
+    // Get user's current location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const locationUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          
+          // Create SOS message
+          const sosMessage = `🚨 EMERGENCY SOS 🚨\n\nI need immediate help!\n\nMy Location: ${locationUrl}\nCoordinates: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}\n\nPlease send rescue assistance immediately.`;
+          
+          try {
+            // Copy SOS message to clipboard
+            await navigator.clipboard.writeText(sosMessage);
+            
+            // Send SOS alert to backend for admin visibility
+            try {
+              await axiosInstance.post('/reports', {
+                hazard_type: 'Emergency SOS',
+                description: `Emergency SOS activated. Immediate assistance required at location: ${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
+                severity: 'critical',
+                latitude: latitude,
+                longitude: longitude,
+                image_filenames: []
+              });
+              
+              toast.success("🚨 SOS sent to emergency services and admin!", { duration: 4000 });
+            } catch (apiError) {
+              console.error("Failed to send SOS to backend:", apiError);
+              toast.success("SOS message copied to clipboard! Dialing 112...", { duration: 3000 });
+            }
+          } catch (err) {
+            console.error("Failed to copy to clipboard:", err);
+            toast.error("Unable to send SOS alert");
+          }
+          
+          // Dial emergency number
+          window.location.href = "tel:112";
+        },
+        (error) => {
+          console.error("Location error:", error);
+          toast.error("Unable to get location. Dialing 112...");
+          // Still dial 112 even if location fails
+          window.location.href = "tel:112";
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      toast.error("Geolocation not supported. Dialing 112...");
+      window.location.href = "tel:112";
+    }
+  };
+
+  return (
+    <header className="h-16 bg-white dark:bg-black border-b border-gray-200 dark:border-[rgb(47,51,54)] flex items-center justify-between px-4 lg:px-6 shrink-0 z-30 backdrop-blur-sm bg-white/80 dark:bg-black/80">
+
+      {/* Left — logo */}
+      <div className="flex items-center gap-3">
+        {/* Logo - hidden on mobile for admins, always visible for citizens */}
+        <Link 
+          to="/" 
+          className={`flex items-center hover:opacity-80 transition-opacity ${
+            isAdmin ? 'hidden lg:flex' : 'flex'
+          }`}
+        >
+          <img src="/anchor-nobg.png" alt="तत्-Sahayk Logo" className="h-10 w-auto object-contain" />
+          {isAdmin && (
+            <span className="ml-2 px-2 py-1 bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-full border border-purple-200 dark:border-purple-500/20">
+              ADMIN
+            </span>
+          )}
+        </Link>
+        
+        {/* Home button for admins on mobile - replaces logo */}
+        {isAdmin && (
+          <Link
+            to="/"
+            className="lg:hidden flex items-center gap-2 p-2 rounded-full bg-gray-100 dark:bg-[rgb(22,22,22)] hover:bg-gray-200 dark:hover:bg-[rgb(38,38,38)] transition-colors"
+            title="Home"
+          >
+            <Home size={20} className="text-gray-700 dark:text-gray-300" />
+          </Link>
+        )}
+      </div>
+
+      {/* Right controls */}
+      <div className="flex items-center gap-2 relative z-40">
+        {/* Local/Nationwide Toggle - Only on homepage for citizens */}
+        {showLocationToggle && authUser?.district && (
+          <div className="flex items-center gap-2 bg-gray-100 dark:bg-[rgb(22,22,22)] rounded-full p-1">
+            <button
+              onClick={() => setLocationFilter("nearby")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                locationFilter === "nearby"
+                  ? "bg-green-500 text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              <MapPin size={14} />
+              <span className="hidden sm:inline">{authUser.district}</span>
+            </button>
+            <button
+              onClick={() => setLocationFilter("nationwide")}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                locationFilter === "nationwide"
+                  ? "bg-sky-500 text-white shadow-sm"
+                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+              }`}
+            >
+              <Globe size={14} />
+              <span className="hidden sm:inline">Nationwide</span>
+            </button>
+          </div>
+        )}
+
+        {/* SOS Button - Only for citizens, not admins */}
+        {!isAdmin && (
+          <button
+            onClick={handleSOS}
+            className="flex items-center gap-1.5 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-full transition-all shadow-sm hover:shadow-md active:scale-95 relative"
+          >
+            <Phone size={14} />
+            <span className="hidden sm:inline">SOS 112</span>
+            <span className="sm:hidden">SOS</span>
+          </button>
+        )}
+
+        {/* Language dropdown - HIDDEN */}
+        {/* <div ref={langRef} className="relative">
+          <button
+            onClick={() => setLangOpen((o) => !o)}
+            className="flex items-center gap-1.5 px-3 py-2 bg-gray-100 dark:bg-[rgb(22,22,22)] hover:bg-gray-200 dark:hover:bg-[rgb(38,38,38)] rounded-full text-sm font-medium text-gray-700 dark:text-gray-200 transition-colors"
+          >
+            <span className="text-xs">{currentLang.native}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 hidden sm:block">{currentLang.label}</span>
+            <ChevronDown size={13} className={`text-gray-400 transition-transform ${langOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {langOpen && (
+            <div className="absolute right-0 top-full mt-2 w-44 bg-white dark:bg-[rgb(22,22,22)] border border-gray-200 dark:border-[rgb(47,51,54)] rounded-2xl shadow-xl overflow-hidden z-[9999]">
+              <div className="px-4 py-2 border-b border-gray-100 dark:border-[rgb(47,51,54)]">
+                <p className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Select Language</p>
+              </div>
+              {LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => { i18n.changeLanguage(lang.code); setLangOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm text-left transition-colors
+                    ${i18n.language === lang.code
+                      ? "bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 font-semibold"
+                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[rgb(38,38,38)]"}`}
+                >
+                  <span className="text-base w-8 text-center">{lang.native}</span>
+                  <span>{lang.label}</span>
+                  {i18n.language === lang.code && <span className="ml-auto text-sky-500">✓</span>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div> */}
+
+        {/* Dark mode toggle - HIDDEN (default is dark) */}
+        {/* <button
+          onClick={toggle}
+          className="p-2.5 rounded-full bg-gray-100 dark:bg-[rgb(22,22,22)] text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[rgb(38,38,38)] transition-colors"
+          title={dark ? "Switch to light mode" : "Switch to dark mode"}
+        >
+          {dark ? <Sun size={18} /> : <Moon size={18} />}
+        </button> */}
+
+        {/* User menu - only show if authenticated */}
+        {authUser && (
+          <div ref={userMenuRef} className="relative">
+            <button
+              onClick={() => setUserMenuOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 dark:bg-[rgb(22,22,22)] hover:bg-gray-200 dark:hover:bg-[rgb(38,38,38)] rounded-full transition-colors"
+            >
+              {authUser.profile_photo ? (
+                <img 
+                  src={authUser.profile_photo} 
+                  alt={authUser.full_name}
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-sky-400 to-blue-500 flex items-center justify-center text-white text-xs font-semibold">
+                  {authUser.full_name?.charAt(0)}
+                </div>
+              )}
+              <ChevronDown size={13} className={`text-gray-400 transition-transform hidden sm:block ${userMenuOpen ? "rotate-180" : ""}`} />
+            </button>
+
+            {userMenuOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-[rgb(22,22,22)] border border-gray-200 dark:border-[rgb(47,51,54)] rounded-2xl shadow-xl overflow-hidden z-[9999]">
+                {/* User info */}
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-[rgb(47,51,54)]">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    {authUser.full_name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{authUser.email}</p>
+                  {/* ADMIN badge - desktop only */}
+                  {isAdmin && (
+                    <span className="hidden lg:inline-block mt-1.5 px-2 py-0.5 bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400 text-[10px] font-bold rounded-full">
+                      ADMIN
+                    </span>
+                  )}
+                </div>
+
+                {/* Menu items */}
+                <div className="py-1">
+                  {/* Only show My Profile for citizens, not admins */}
+                  {!isAdmin && (
+                    <Link
+                      to="/profile"
+                      onClick={() => setUserMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[rgb(38,38,38)] transition-colors"
+                    >
+                      <User size={16} />
+                      <span>{t("myProfile")}</span>
+                    </Link>
+                  )}
+                  
+                  <button
+                    onClick={() => {
+                      setUserMenuOpen(false);
+                      logoutMutation();
+                    }}
+                    disabled={loggingOut}
+                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                  >
+                    <LogOut size={16} />
+                    <span>{loggingOut ? "Signing out..." : t("signOut")}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+    </header>
+  );
+};
+
+export default Navbar;
