@@ -1,0 +1,43 @@
+from fastapi import APIRouter
+from app.api.v1.endpoints import auth, reports, media, social, comments, alerts, map_admin, ai_analysis, map_resources, map_data, red_zone, admin_analytics, user_activity
+
+api_router = APIRouter()
+
+# Auth Routes
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
+
+# Reports Routes
+api_router.include_router(reports.router, prefix="/reports", tags=["reports"])
+
+#media Routes
+api_router.include_router(media.router, prefix="/media", tags=["media"])
+
+#Social Post
+api_router.include_router(social.router, prefix="/social", tags=["social"])
+
+#Comments
+api_router.include_router(comments.router, prefix="/reports",  tags=["comments"])
+
+#Alerts
+api_router.include_router(alerts.router,   prefix="/alerts",   tags=["alerts"])
+
+#Ai Analysis
+api_router.include_router(ai_analysis.router, prefix="/ai", tags=["ai"])
+
+#Map Admin
+api_router.include_router(map_admin.router, prefix="/map", tags=["map"])
+
+#Map Resources (Deployments & Shelters)
+api_router.include_router(map_resources.router, prefix="/map", tags=["map-resources"])
+
+#Map Data (Optimized for map view)
+api_router.include_router(map_data.router, prefix="/map", tags=["map-data"])
+
+# Red Zone Management (Proactive Relocation)
+api_router.include_router(red_zone.router, prefix="/red-zones", tags=["red-zones"])
+
+# Admin Analytics (Real-time Consolidated Reports & AI Analysis)
+api_router.include_router(admin_analytics.router, prefix="/admin/analytics", tags=["admin-analytics"])
+
+# User Activity (Privacy-safe activity tracking)
+api_router.include_router(user_activity.router, prefix="/activity", tags=["user-activity"])

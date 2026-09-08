@@ -1,0 +1,17 @@
+#Python Virtual Environment
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+
+#Environment Variables
+.env
+.DS_Store
+backend/.env
+__pycache__/
+.env.example
+
+#Database Data
+postgres_data/
+redis_data/
