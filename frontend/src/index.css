@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light theme - Elegant & Comfortable (Softer tones) */
+    --bg-primary: 248 250 252;      /* Very soft grey-blue background */
+    --bg-secondary: 241 245 249;    /* Slightly darker soft grey */
+    --bg-tertiary: 226 232 240;     /* Card backgrounds - subtle */
+    --border-primary: 203 213 225;  /* Soft borders */
+    --border-secondary: 226 232 240;
+    --text-primary: 30 41 59;       /* Softer dark text */
+    --text-secondary: 71 85 105;    /* Medium grey text */
+    --text-tertiary: 100 116 139;   /* Light grey text */
+    --accent-primary: 14 165 233;   /* Sky blue - professional */
+    --accent-hover: 2 132 199;
+    --danger: 239 68 68;
+    --success: 34 197 94;
+    --warning: 251 146 60;
+  }
+
+  .dark {
+    /* Dark theme - Sophisticated & Modern (X.com inspired) */
+    --bg-primary: 0 0 0;
+    --bg-secondary: 22 22 22;
+    --bg-tertiary: 38 38 38;
+    --border-primary: 47 51 54;
+    --border-secondary: 38 38 38;
+    --text-primary: 231 233 234;
+    --text-secondary: 139 152 165;
+    --text-tertiary: 113 118 123;
+    --accent-primary: 29 155 240; /* Twitter blue */
+    --accent-hover: 26 140 216;
+    --danger: 244 33 46;
+    --success: 0 186 124;
+    --warning: 255 212 0;
+  }
+
+  body {
+    @apply bg-slate-50 dark:bg-black text-slate-800 dark:text-[rgb(var(--text-primary))] transition-colors duration-200;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-50 dark:bg-[rgb(var(--bg-primary))];
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-[rgb(var(--border-primary))] rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-[rgb(var(--text-tertiary))];
+  }
+}
+
+@layer components {
+  /* Modern card style - Soft grey in light mode */
+  .card {
+    @apply bg-white dark:bg-[rgb(var(--bg-primary))] border border-slate-200 dark:border-[rgb(var(--border-primary))] rounded-2xl;
+  }
+
+  /* Modern button */
+  .btn-primary {
+    @apply bg-[rgb(var(--accent-primary))] hover:bg-[rgb(var(--accent-hover))] text-white font-semibold rounded-full transition-all duration-200;
+  }
+
+  /* Subtle hover effect */
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer utilities {
+  /* Safe area padding for mobile devices with notches/home indicators */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  
+  .pt-safe {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
