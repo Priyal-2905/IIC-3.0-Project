@@ -1,7 +1,3 @@
-fastapi==0.109.0
-uvicorn[standard]==0.27.0
-sqlalchemy==2.0.25
-psycopg2-binary==2.9.9
 alembic==1.13.1
 pydantic==2.5.3
 pydantic-settings==2.1.0
@@ -19,4 +15,8 @@ shapely==2.0.3
 google-auth==2.27.0
 feedparser==6.0.11
 reportlab==4.2.2
-aiohttp
+aiohttp ==
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+sqlalchemy==2.0.25
+psycopg2-binary==2.9.9
